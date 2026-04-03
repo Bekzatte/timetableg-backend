@@ -1118,6 +1118,7 @@ class ApiHandler(BaseHTTPRequestHandler):
         email = payload.get("email", "").strip()
         password = payload.get("password", "")
         selected_role = (payload.get("role") or "").strip().lower()
+        teacher_code = (payload.get("teacherCode") or "").strip()
 
         if selected_role and selected_role not in {"admin", "student", "teacher"}:
             raise ValueError("Некорректная роль")
@@ -1140,6 +1141,14 @@ class ApiHandler(BaseHTTPRequestHandler):
         if selected_role and user["role"] != selected_role:
             self.send_json(403, {"error": "Этот аккаунт зарегистрирован с другой ролью"})
             return
+
+        if user["role"] == "teacher":
+            if not TEACHER_REGISTRATION_CODE:
+                self.send_json(403, {"error": "Вход преподавателей временно недоступен"})
+                return
+            if teacher_code != TEACHER_REGISTRATION_CODE:
+                self.send_json(403, {"error": "Неверный код преподавателя"})
+                return
 
         self.send_json(200, sanitize_user(user))
 
