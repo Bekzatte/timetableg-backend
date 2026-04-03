@@ -1026,21 +1026,21 @@ class ApiHandler(BaseHTTPRequestHandler):
             if exc.details:
                 payload["details"] = exc.details
             self.send_json(exc.status, payload)
-        except ValueError as exc:
-            self.send_json(400, {"error": str(exc)})
+        except ValueError:
+            self.send_json(400, {"error": "Некорректный запрос", "errorCode": "bad_request"})
         except json.JSONDecodeError:
             self.send_json(400, {"error": "Некорректный JSON", "errorCode": "invalid_json"})
         except (sqlite3.IntegrityError, Exception) as exc:
             is_integrity = exc.__class__.__name__ in {"IntegrityError", "UniqueViolation"}
             if is_integrity:
-                self.send_json(400, {"error": f"Ошибка БД: {exc}", "errorCode": "database_error"})
+                self.send_json(400, {"error": "Ошибка базы данных", "errorCode": "database_error"})
                 return
-            self.send_json(500, {"error": f"Внутренняя ошибка сервера: {exc}", "errorCode": "internal_server_error"})
+            self.send_json(500, {"error": "Внутренняя ошибка сервера", "errorCode": "internal_server_error"})
 
     def handle_collection_routes(self, method, api_path, query):
         parts = [part for part in api_path.split("/") if part]
         if not parts:
-            self.send_json(404, {"error": "Not found"})
+            self.send_json(404, {"error": "Not found", "errorCode": "not_found"})
             return
 
         collection = parts[0]
@@ -1102,7 +1102,7 @@ class ApiHandler(BaseHTTPRequestHandler):
                         self.send_json(200, {"success": True})
                         return
 
-        self.send_json(405, {"error": "Method not allowed"})
+        self.send_json(405, {"error": "Method not allowed", "errorCode": "method_not_allowed"})
 
     def require_auth(self):
         token = parse_bearer_token(self.headers.get("Authorization"))
